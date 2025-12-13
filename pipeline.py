@@ -1,29 +1,57 @@
 from speech_to_text import transcribe_audio
 from speech_features import analyze_speech
 
-AUDIO_FILE = "clean_audio.wav"
 
-print("🔄 Starting Speech Analysis Pipeline...\n")
+def get_pipeline_output(audio_file):
+    """Run transcription and analysis, return structured data.
 
-# Step 1: Transcription
-data = transcribe_audio(AUDIO_FILE)
+    Returns a dict with `transcript` and `audio_features` keys
+    matching the requested format.
+    """
+    # Step 1: Transcription
+    transcription_data = transcribe_audio(audio_file)
 
-print("\n📝 Transcript:\n")
-print(data["full_text"])
+    # Step 2: Speech Analysis
+    results, score, label, wpm, avg_pause = analyze_speech(
+        audio_file,
+        transcription_data["word_segments"]
+    )
 
-# Step 2: Speech Analysis
-print("\n📊 Analyzing speech...\n")
-results, score, label, wpm, avg_pause = analyze_speech(
-    AUDIO_FILE,
-    data["word_segments"]
-)
+    # Assemble the output data structure
+    data = {
+        "transcript": transcription_data["transcript"],
+        "audio_features": {
+            "speech_rate": results.get("speech_rate", wpm),
+            "pitch_variance": results.get("pitch_variance"),
+            "pause_ratio": results.get("pause_ratio", round(avg_pause / (wpm/60) if wpm else 0, 2)),
+            "energy_level": results.get("energy_level")
+        }
+    }
 
-# Step 3: Results
-print("===== SPEECH ANALYSIS REPORT =====")
-for k, v in results.items():
-    print(f"{k}: {v}")
+    # Include internal analysis if needed for debugging
+    data["_analysis_details"] = {
+        "results": results,
+        "confidence_score": score,
+        "label": label,
+        "wpm": wpm,
+        "avg_pause": avg_pause
+    }
 
-print("\nWords Per Minute:", wpm)
-print("Average Pause:", avg_pause)
-print("Overall Score:", score)
-print("Confidence Level:", label)
+    return data
+
+
+if __name__ == "__main__":
+    AUDIO_FILE = "clean_audio.wav"
+    print("🔄 Starting Speech Analysis Pipeline...\n")
+
+    out = get_pipeline_output(AUDIO_FILE)
+
+    print("\n📝 Transcript:\n")
+    print(out["transcript"])
+
+    print("\n📊 SPEECH ANALYSIS REPORT")
+    for k, v in out["_analysis_details"]["results"].items():
+        print(f"{k}: {v}")
+
+    print("\nFormatted Data Return:\n")
+    print(out)

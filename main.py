@@ -5,9 +5,11 @@ Runs the complete workflow: Record → Preprocess → Transcribe → Analyze
 
 import sounddevice as sd
 import soundfile as sf
+import json
 import librosa
 from speech_to_text import transcribe_audio
 from speech_features import analyze_speech
+from agent import run_agents
 
 # Configuration
 DURATION = 45        # Recording duration in seconds
@@ -72,7 +74,7 @@ def run_pipeline(audio_file=CLEAN_AUDIO):
     data = transcribe_audio(audio_file)
 
     print("\n📝 Transcript:\n")
-    print(data["full_text"])
+    print(data["transcript"])
 
     print("\n" + "="*50)
     print("📊 STEP 4: SPEECH ANALYSIS")
@@ -95,6 +97,31 @@ def run_pipeline(audio_file=CLEAN_AUDIO):
     print("\n" + "="*50)
     print("✅ PIPELINE COMPLETE!")
     print("="*50 + "\n")
+
+    # Assemble output state and run agent orchestration
+    pipeline_state = {
+        "transcript": data["transcript"],
+        "audio_features": {
+            "speech_rate": results.get("speech_rate", round(wpm)),
+            "pitch_variance": results.get("pitch_variance"),
+            "pause_ratio": results.get("pause_ratio", round(avg_pause / (wpm/60) if wpm else 0, 2)),
+            "energy_level": results.get("energy_level")
+        }
+    }
+
+    print("\n🧠 Running agents with pipeline output...\n")
+    agent_results = run_agents(pipeline_state)
+
+    print("\n📌 Communication Analysis")
+    print(json.dumps(agent_results.get("communication_analysis"), indent=2))
+
+    print("\n📌 Confidence & Emotion Analysis")
+    print(json.dumps(agent_results.get("confidence_emotion_analysis"), indent=2))
+
+    print("\n📌 Personality Mapping")
+    print(json.dumps(agent_results.get("personality_analysis"), indent=2))
+
+    return pipeline_state
 
 
 if __name__ == "__main__":

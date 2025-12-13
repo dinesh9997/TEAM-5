@@ -34,6 +34,13 @@ def analyze_speech(audio_file, word_segments):
     pitches, magnitudes = librosa.piptrack(y=y, sr=sr)
     pitch_values = pitches[pitches > 0]
     pitch_mean = round(np.mean(pitch_values), 2) if len(pitch_values) else 0
+    pitch_variance = round(np.var(pitch_values), 2) if len(pitch_values) else 0
+
+    # -----------------------
+    # Pause ratio -> total pause time / duration
+    # -----------------------
+    total_pause_time = round(sum(pauses), 2) if pauses else 0
+    pause_ratio = round(total_pause_time / duration_sec, 2) if duration_sec > 0 else 0
 
     # -----------------------
     # Confidence Score
@@ -51,7 +58,23 @@ def analyze_speech(audio_file, word_segments):
         "Low Confidence"
     )
 
+    # -----------------------
+    # Energy level mapping
+    # -----------------------
+    if energy_score >= 70:
+        energy_level = "high"
+    elif energy_score >= 40:
+        energy_level = "medium-high"
+    elif energy_score >= 20:
+        energy_level = "medium"
+    else:
+        energy_level = "low"
+
     results = {
+        "speech_rate": round(wpm),
+        "pitch_variance": pitch_variance,
+        "pause_ratio": pause_ratio,
+        "energy_level": energy_level,
         "Energy Score": energy_score,
         "Pitch Mean (Hz)": pitch_mean,
         "Speech Duration (sec)": round(duration_sec, 2),

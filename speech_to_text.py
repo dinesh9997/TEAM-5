@@ -44,7 +44,7 @@ def transcribe_audio(audio_file):
             })
 
     return {
-        "full_text": full_text.strip(),
+        "transcript": full_text.strip(),
         "segments": segment_data,
         "word_segments": word_segments
     }
@@ -54,4 +54,4 @@ def transcribe_audio(audio_file):
 if __name__ == "__main__":
     data = transcribe_audio(AUDIO_FILE)
     print("\n📝 Transcript:\n")
-    print(data["full_text"])
+    print(data["transcript"]) 
