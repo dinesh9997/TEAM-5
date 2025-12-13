@@ -2,43 +2,48 @@ from llm_helper import llm
 from llm1.prompt_templates import COMMUNICATION_PROMPT
 from utils.parser import safe_parse
 
+# Import RAG for context augmentation
+try:
+    from rag.retriever import get_retriever
+    RAG_AVAILABLE = True
+except ImportError:
+    RAG_AVAILABLE = False
+
+
+def _get_communication_context(state):
+    """Retrieve relevant communication knowledge from RAG"""
+    if not RAG_AVAILABLE:
+        return ""
+    try:
+        retriever = get_retriever()
+        f = state.get("audio_features", {})
+        # Use all relevant metrics for better semantic retrieval
+        metrics = {
+            "speech_rate": f.get("speech_rate", ""),
+            "pause_ratio": f.get("pause_ratio", ""),
+            "transcript_preview": state.get("transcript", "")[:100]
+        }
+        return retriever.get_context_for_analysis("communication", metrics)
+    except Exception as e:
+        print(f"⚠️ Communication RAG context failed: {e}")
+        return ""
+
+
 def communication_agent(state):
     try:
         transcript = state["transcript"]
         f = state["audio_features"]
-
-        prompt = f"""
-You are a Communication Analysis AI Agent.
-
-ROLE:
-Analyze spoken communication objectively using measurable indicators.
-
-INPUT:
-Transcript:
-{transcript}
-
-Speech Metrics:
-- Speech rate: {f.get("speech_rate")} words/min
-- Pause ratio: {f.get("pause_ratio")}
-
-ANALYSIS RULES:
-- Speech rate 120–160 → normal
-- Pause ratio > 0.25 → reduced fluency
-- Clear sentence transitions → higher clarity
-- Avoid subjective opinions
-
-TASK:
-Evaluate communication quality ONLY.
-
-OUTPUT JSON ONLY:
-{{
-  "clarity_score": number (0–100),
-  "fluency_level": "Poor | Average | Good | Excellent",
-  "speech_structure": "Disorganized | Basic | Structured | Well-structured",
-  "vocabulary_level": "Basic | Intermediate | Advanced"
-}}
-"""
-
+        
+        # Get RAG context
+        rag_context = _get_communication_context(state)
+        
+        # Build prompt using template
+        prompt = COMMUNICATION_PROMPT.format(
+            rag_context=f"EXPERT KNOWLEDGE:\n{rag_context}\n" if rag_context else "",
+            transcript=transcript[:500] if len(transcript) > 500 else transcript,  # Limit for efficiency
+            speech_rate=f.get("speech_rate", "N/A"),
+            pause_ratio=f.get("pause_ratio", "N/A")
+        )
 
         response = llm.invoke(prompt)
         parsed = safe_parse(response)
