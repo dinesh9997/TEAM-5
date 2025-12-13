@@ -1,0 +1,18 @@
+# Ignore audio files
+*.wav
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.pyc
+
+
+# Environment dirs
+.env
+.venv
+venv/
+
+# IDE / OS files
+.vscode/
+.DS_Store
+Thumbs.db
