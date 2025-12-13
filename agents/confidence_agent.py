@@ -9,6 +9,14 @@ try:
 except ImportError:
     RAG_AVAILABLE = False
 
+# Import GuardrailsAI for output validation
+try:
+    from guardrails_config import validate_agent_response
+    GUARDRAILS_AVAILABLE = True
+except ImportError:
+    GUARDRAILS_AVAILABLE = False
+    def validate_agent_response(x, _): return x
+
 
 def _get_confidence_context(state):
     """Retrieve relevant confidence knowledge from RAG"""
@@ -46,8 +54,11 @@ def confidence_agent(state):
 
         response = llm.invoke(prompt)
         parsed = safe_parse(response)
+        
+        # Validate output with guardrails
+        validated = validate_agent_response(parsed, "confidence_agent")
 
-        return {"confidence_emotion_analysis": parsed}
+        return {"confidence_emotion_analysis": validated}
 
     except Exception as e:
         return {

@@ -2,6 +2,14 @@ from rag.retriever import get_retriever
 from llm1.local_llm import get_llm
 from llm1.prompt_templates import REPORT_PROMPT
 
+# Import GuardrailsAI for report validation
+try:
+    from guardrails_config import validate_final_report
+    GUARDRAILS_AVAILABLE = True
+except ImportError:
+    GUARDRAILS_AVAILABLE = False
+    def validate_final_report(x): return x
+
 
 def rag_enhanced_report(agent_outputs: dict) -> str:
     """
@@ -52,4 +60,9 @@ def rag_enhanced_report(agent_outputs: dict) -> str:
         agent_outputs=agent_outputs
     )
 
-    return llm.invoke(prompt)
+    report = llm.invoke(prompt)
+    
+    # Validate final report with guardrails
+    validated_report = validate_final_report(report)
+    
+    return validated_report

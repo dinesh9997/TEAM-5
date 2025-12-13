@@ -11,6 +11,14 @@ except ImportError:
     RAG_AVAILABLE = False
     print("⚠️ RAG module not available, proceeding without retrieval augmentation")
 
+# Import GuardrailsAI for report validation
+try:
+    from guardrails_config import validate_final_report
+    GUARDRAILS_AVAILABLE = True
+except ImportError:
+    GUARDRAILS_AVAILABLE = False
+    def validate_final_report(x): return x
+
 
 def _get_rag_context(agent_outputs: dict) -> str:
     """
@@ -86,4 +94,9 @@ def generate_final_report(agent_outputs: dict):
         agent_outputs=agent_outputs
     )
 
-    return llm.invoke(prompt)
+    report = llm.invoke(prompt)
+    
+    # Validate final report with guardrails
+    validated_report = validate_final_report(report)
+    
+    return validated_report
