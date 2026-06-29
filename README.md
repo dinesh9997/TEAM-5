@@ -5,7 +5,7 @@
 [![React](https://img.shields.io/badge/React-19.2+-61DAFB.svg)](https://reactjs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-An advanced AI-powered speech analysis system that provides real-time personality insights and communication feedback using local LLMs, RAG, and multi-agent AI architecture.
+An advanced AI-powered speech analysis system that provides real-time personality insights and communication feedback using Google Gemini API, RAG, and multi-agent AI architecture.
 
 ## 📋 Table of Contents
 
@@ -27,7 +27,7 @@ An advanced AI-powered speech analysis system that provides real-time personalit
 
 ## 🌟 Overview
 
-TEAM-5 is a comprehensive speech analysis pipeline that combines state-of-the-art speech processing, natural language understanding, and multi-agent AI systems to provide detailed personality insights and communication analysis. The system uses local LLMs (via Ollama) and Retrieval-Augmented Generation (RAG) to deliver personalized, actionable feedback.
+TEAM-5 is a comprehensive speech analysis pipeline that combines state-of-the-art speech processing, natural language understanding, and multi-agent AI systems to provide detailed personality insights and communication analysis. The system uses Google Gemini API and Retrieval-Augmented Generation (RAG) to deliver personalized, actionable feedback.
 
 ### Key Capabilities
 
@@ -77,7 +77,7 @@ TEAM-5 is a comprehensive speech analysis pipeline that combines state-of-the-ar
 │  └──────────┘  └───────────┘  └──────────┘  └─────┬──────┘ │
 │                                                      │        │
 │  ┌──────────────────────────────────────────────────▼──────┐ │
-│  │            RAG System (ChromaDB + Ollama)              │ │
+│  │           RAG System (ChromaDB + Embeddings)          │ │
 │  │  - Communication Knowledge    - Confidence Psychology  │ │
 │  │  - Personality Traits         - Improvement Tips       │ │
 │  └────────────────────────────────────────────────────────┘ │
@@ -89,11 +89,11 @@ TEAM-5 is a comprehensive speech analysis pipeline that combines state-of-the-ar
 └───────────────────────────────────────────────────────────────┘
                          │
                          ▼
-                  ┌──────────────┐
-                  │    Ollama    │
-                  │ Local LLM    │
-                  │  (mistral)   │
-                  └──────────────┘
+              ┌────────────────────┐
+              │   Google Gemini    │
+              │   Cloud LLM API   │
+              │ (gemini-2.0-flash) │
+              └────────────────────┘
 ```
 
 ### Component Breakdown
@@ -138,8 +138,9 @@ python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-# Install and start Ollama
-ollama pull mistral
+# Configure Gemini API key (free at https://aistudio.google.com/apikey)
+cp .env.example .env
+# Edit .env and add your GEMINI_API_KEY
 
 # Start backend API
 uvicorn api:app --reload --port 8000
@@ -190,33 +191,30 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. Install Ollama (Required for LLM)
+### 3. Configure Google Gemini API (Required for LLM)
 
-Ollama provides local LLM inference.
+The project uses Google Gemini API for AI inference. The free tier is generous and requires no credit card.
 
-**Linux/macOS:**
+**Get Your API Key:**
+1. Visit [Google AI Studio](https://aistudio.google.com/apikey)
+2. Sign in with your Google account
+3. Click "Create API Key"
+4. Copy the generated key
+
+**Configure the API Key:**
 ```bash
-curl -fsSL https://ollama.ai/install.sh | sh
+cd backend
+cp .env.example .env
 ```
 
-**Windows:**
-1. Download from [ollama.ai/download](https://ollama.ai/download)
-2. Run the installer
-3. Add Ollama to PATH:
-   - Open "Edit environment variables for your account"
-   - Add `C:\Users\%USERNAME%\AppData\Local\Programs\Ollama` to PATH
-   - Restart terminal
-
-**Verify Installation:**
-```bash
-ollama --version
+Edit `backend/.env` and replace `your_gemini_api_key_here` with your actual key:
+```
+GEMINI_API_KEY=your_actual_api_key_here
 ```
 
-#### Pull LLM Model
-
+**Verify Configuration:**
 ```bash
-ollama pull mistral
-```
+python -c "from llm1.llm_config import GEMINI_API_KEY; print('✅ Key configured' if GEMINI_API_KEY else '❌ Key not set')"
 
 ### 4. Frontend Setup (Optional)
 
@@ -399,10 +397,12 @@ When the backend is running, visit:
 
 ### LLM Configuration (`backend/llm1/llm_config.py`)
 
-```python
-LLM_MODEL_NAME = "mistral"  # Change model
-TEMPERATURE = 0.3            # Creativity (0.0-1.0)
-MAX_TOKENS = 512            # Max response length
+Configured via environment variables in `backend/.env`:
+```bash
+GEMINI_API_KEY=your_key_here           # Required
+GEMINI_MODEL_NAME=gemini-2.0-flash     # Model to use
+LLM_TEMPERATURE=0.3                     # Creativity (0.0-1.0)
+LLM_MAX_TOKENS=1024                     # Max response length
 ```
 
 ### RAG Configuration (`backend/rag/config.py`)
@@ -488,16 +488,22 @@ python main.py
 
 ## 🔧 Troubleshooting
 
-### Ollama Connection Issues
+### Gemini API Issues
 
-**Error:** `Ollama not available`
+**Error:** `GEMINI_API_KEY not set`
 
 **Solution:**
-1. Ensure Ollama is running: `ollama serve`
-2. Check model is pulled: `ollama list`
-3. Pull model if needed: `ollama pull mistral`
-4. **Windows**: Verify Ollama is in PATH
-5. **Linux/macOS**: Check `which ollama`
+1. Get a free API key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+2. Copy `.env.example` to `.env`: `cp .env.example .env`
+3. Add your API key to `backend/.env`
+4. Restart the backend server
+
+**Error:** `Gemini API not available`
+
+**Solution:**
+1. Check your API key is valid
+2. Verify internet connection
+3. Check Google AI Studio for API status
 
 ### Import Errors
 
@@ -552,7 +558,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **Faster-Whisper**: OpenAI Whisper implementation
-- **Ollama**: Local LLM runtime
+- **Google Gemini**: Cloud LLM API
 - **LangChain**: LLM application framework
 - **ChromaDB**: Vector database for AI
 - **FastAPI**: Modern Python web framework
@@ -566,13 +572,13 @@ For issues and questions:
 
 ## 🗺️ Roadmap
 
-- [ ] Support for additional LLM providers
+- [x] Support for cloud LLM providers (Google Gemini)
 - [ ] Multi-language support
 - [ ] Real-time streaming analysis
 - [ ] Advanced visualization dashboards
 - [ ] Mobile app
 - [ ] Docker containerization
-- [ ] Cloud deployment guide
+- [x] Cloud deployment ready (Gemini API)
 
 ---
 
