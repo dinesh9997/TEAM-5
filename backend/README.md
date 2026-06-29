@@ -1,6 +1,6 @@
 # TEAM-5 Speech Analysis Pipeline
 
-An advanced AI-powered speech analysis system that records audio, transcribes speech, analyzes communication patterns, and generates personalized feedback reports using local LLMs and RAG (Retrieval Augmented Generation).
+An advanced AI-powered speech analysis system that records audio, transcribes speech, analyzes communication patterns, and generates personalized feedback reports using Google Gemini API and RAG (Retrieval Augmented Generation).
 
 ## Features
 
@@ -43,43 +43,21 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 4. Install Ollama (Required for LLM)
+### 4. Configure Google Gemini API (Required for LLM)
 
-Ollama is used for local LLM inference. Install it from [ollama.ai](https://ollama.ai/):
+The project uses Google Gemini API for AI inference. The free tier requires no credit card.
 
-**Linux/macOS:**
-```bash
-curl -fsSL https://ollama.ai/install.sh | sh
-```
-
-**Windows:**
-1. Download and install from [ollama.ai/download](https://ollama.ai/download)
-2. **Important**: Add Ollama to your system PATH environment variable:
-   - The installer typically installs Ollama to `C:\Users\%USERNAME%\AppData\Local\Programs\Ollama`
-   - **Note**: Use `%USERNAME%` exactly as shown - Windows will automatically replace it with your actual username
-   - **Option 1 - Add to User Environment Variables:**
-     1. Open "Edit environment variables for your account" from Start menu
-     2. Under "User variables", select "Path" and click "Edit"
-     3. Click "New" and add the path exactly: `C:\Users\%USERNAME%\AppData\Local\Programs\Ollama`
-     4. Click "OK" on all dialogs
-   - **Option 2 - Add to System Environment Variables (requires admin):**
-     1. Open "Edit the system environment variables" from Start menu
-     2. Click "Environment Variables"
-     3. Under "System variables", select "Path" and click "Edit"
-     4. Click "New" and add the path exactly: `C:\Users\%USERNAME%\AppData\Local\Programs\Ollama`
-     5. Click "OK" on all dialogs
-3. **Restart your terminal/command prompt** after adding to PATH
-4. Verify installation: Open a new terminal and run `ollama --version`
-
-### 5. Pull the LLM Model
-
-After installing Ollama, pull the required model:
+1. Get your API key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+2. Configure it:
 
 ```bash
-ollama pull llama3.2:3b
+cp .env.example .env
+# Edit .env and add your GEMINI_API_KEY
 ```
 
-The default model is `llama3.2:3b`. You can change this in `llm1/llm_config.py`.
+Verify configuration:
+```bash
+python -c "from llm1.llm_config import GEMINI_API_KEY; print('✅ Key configured' if GEMINI_API_KEY else '❌ Key not set')"
 
 ### 6. (Optional) Install GuardrailsAI for Enhanced Safety
 
@@ -102,12 +80,13 @@ guardrails hub install hub://guardrails/detect_pii
 
 ### LLM Configuration
 
-Edit `llm1/llm_config.py` to customize LLM settings:
+Configured via environment variables in `.env` file:
 
-```python
-LLM_MODEL_NAME = "llama3.2:3b"  # Change to your preferred model
-TEMPERATURE = 0.3                # Creativity level (0.0-1.0)
-MAX_TOKENS = 2048               # Maximum response length
+```bash
+GEMINI_API_KEY=your_key_here           # Required - get free at aistudio.google.com/apikey
+GEMINI_MODEL_NAME=gemini-2.0-flash     # Model to use
+LLM_TEMPERATURE=0.3                     # Creativity level (0.0-1.0)
+LLM_MAX_TOKENS=1024                     # Maximum response length
 ```
 
 ### RAG Configuration
@@ -210,6 +189,7 @@ TEAM-5/
 ├── pipeline.py             # Pipeline utilities
 ├── llm_helper.py           # LLM loader helper
 ├── guardrails_config.py    # Input/output validation
+├── .env.example            # Environment variable template
 ├── requirements.txt        # Python dependencies
 ├── README.md              # This file
 │
@@ -255,8 +235,9 @@ TEAM-5/
 ### LLM & Agent Framework
 
 - **langchain**: LLM orchestration framework
-- **langchain-ollama**: Ollama integration for LangChain
-- **ollama**: Local LLM runtime
+- **langchain-google-genai**: Google Gemini integration for LangChain
+- **google-generativeai**: Google Gemini API SDK
+- **python-dotenv**: Environment variable management
 
 ### RAG System
 
@@ -273,26 +254,17 @@ See `requirements.txt` for complete dependency list with versions.
 
 ## Troubleshooting
 
-### Ollama Connection Issues
+### Gemini API Issues
 
-**Error**: `Ollama not available` or `ollama: command not found`
+**Error**: `GEMINI_API_KEY not set` or `Gemini API not available`
 
 **Solution**:
-1. Ensure Ollama is installed and running: `ollama serve`
-2. Check if the model is pulled: `ollama list`
-3. Pull the model if missing: `ollama pull llama3.2:3b`
-4. **Windows users**: If you get `command not found`, verify Ollama is in your PATH:
-   - Open a new terminal and run `ollama --version`
-   - If it fails, add Ollama to PATH (see installation step 4 above)
-   - Use the path with %USERNAME% variable: `C:\Users\%USERNAME%\AppData\Local\Programs\Ollama`
-   - Windows will automatically expand %USERNAME% to your actual username
-   - Restart your terminal after adding to PATH
-5. **Linux/macOS users**: If Ollama isn't in PATH, it may be installed in a custom location:
-   - Try: `which ollama` to find the installation path
-   - Add it to PATH: `export PATH=$PATH:/path/to/ollama`
-   - Add to `~/.bashrc` or `~/.zshrc` to make permanent
+1. Get a free API key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+2. Copy `.env.example` to `.env` and add your key
+3. Restart the backend server
+4. Verify internet connection
 
-The system will fall back to a stub LLM if Ollama is unavailable, which returns mock data for testing.
+The system will fall back to a stub LLM if the API is unavailable, which returns mock data for testing.
 
 ### Microphone Issues
 
@@ -332,20 +304,15 @@ The system will fall back to a stub LLM if Ollama is unavailable, which returns 
 
 ## Advanced Configuration
 
-### Using a Different LLM Model
+### Using a Different Gemini Model
 
-Edit `llm1/llm_config.py`:
+Edit the `.env` file:
 
-```python
-# Available models (example):
-LLM_MODEL_NAME = "llama3.2:3b"     # 3B parameters (fastest)
-# LLM_MODEL_NAME = "llama3.2:7b"   # 7B parameters (balanced)
-# LLM_MODEL_NAME = "llama3.2:13b"  # 13B parameters (most accurate)
-```
-
-Pull the new model:
 ```bash
-ollama pull llama3.2:7b
+# Available models:
+GEMINI_MODEL_NAME=gemini-2.0-flash      # Fast and free (default)
+# GEMINI_MODEL_NAME=gemini-1.5-pro      # More capable, higher limits
+# GEMINI_MODEL_NAME=gemini-1.5-flash    # Balanced option
 ```
 
 ### Customizing Knowledge Base
@@ -387,7 +354,7 @@ Contributions are welcome! Please follow these guidelines:
 ## Acknowledgments
 
 - **Faster-Whisper**: OpenAI Whisper implementation by Guillaume Klein
-- **Ollama**: Local LLM runtime by Ollama Team
+- **Google Gemini**: Cloud LLM API by Google
 - **LangChain**: LLM application framework
 - **ChromaDB**: Vector database for AI applications
 - **GuardrailsAI**: LLM output validation framework
@@ -405,4 +372,5 @@ For issues, questions, or contributions:
 - RAG-enhanced AI reporting
 - Multi-agent analysis system
 - GuardrailsAI integration
-- Local LLM support via Ollama
+- Google Gemini API integration (cloud-ready deployment)
+- Environment-based configuration via .env
