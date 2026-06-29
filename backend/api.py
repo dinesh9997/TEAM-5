@@ -1,12 +1,29 @@
 # backend/api.py
+"""
+FastAPI application for Speech Personality Analysis.
 
-from fastapi import FastAPI, UploadFile, File
-from fastapi.middleware.cors import CORSMiddleware
+Provides REST endpoints for audio analysis using the
+multi-agent AI pipeline with Google Gemini.
+"""
+
+import os
 import shutil
 import uuid
+
+from dotenv import load_dotenv
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
 from link import run_pipeline
 
-app = FastAPI(title="Speech Personality Analysis API")
+# Load environment variables
+load_dotenv()
+
+app = FastAPI(
+    title="Speech Personality Analysis API",
+    description="AI-powered speech analysis with multi-agent personality insights",
+    version="2.0.0",
+)
 
 # Allow frontend access
 app.add_middleware(
@@ -17,18 +34,50 @@ app.add_middleware(
 )
 
 UPLOAD_DIR = "uploads"
-import os
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# backend/api.py
 
-from fastapi import UploadFile, File
-from record_audio import record_audio
-from link import run_pipeline
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for deployment readiness."""
+    gemini_configured = bool(os.getenv("GEMINI_API_KEY"))
+    return {
+        "status": "healthy",
+        "llm_provider": "google-gemini",
+        "gemini_configured": gemini_configured,
+        "model": os.getenv("GEMINI_MODEL_NAME", "gemini-2.0-flash"),
+    }
+
 
 @app.post("/analyze")
 async def analyze_audio(file: UploadFile = File(...)):
-    audio_path = record_audio(file)
-    result = run_pipeline(audio_path)
-    return result
-
+    """
+    Analyze uploaded audio file for speech and personality insights.
+    
+    Accepts audio files (WAV, WebM, MP3, etc.) and returns:
+    - Transcript
+    - Speech metrics
+    - Agent analysis results
+    - Final personality report
+    """
+    try:
+        # Save uploaded file
+        file_ext = os.path.splitext(file.filename or "audio.wav")[1] or ".wav"
+        audio_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}{file_ext}")
+        
+        with open(audio_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Run the analysis pipeline
+        result = run_pipeline(audio_path)
+        
+        # Clean up uploaded file
+        try:
+            os.remove(audio_path)
+        except OSError:
+            pass
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
