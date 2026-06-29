@@ -27,7 +27,7 @@ def safe_parse(s: str):
     - Extra text before/after JSON
     - Single quotes
     - Trailing commas
-    - PARTIAL / TRUNCATED JSON (Ollama issue)
+    - PARTIAL / TRUNCATED JSON (LLM output issue)
     """
 
     if s is None:
