@@ -38,8 +38,10 @@ htmlcov/
 .nox/
 .hypothesis/
 
-# Environment dirs
+# Environment & API keys
 .env
+.env.local
+.env.*.local
 .venv
 env/
 venv/
