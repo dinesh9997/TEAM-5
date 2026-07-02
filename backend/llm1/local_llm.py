@@ -2,20 +2,20 @@
 """
 LLM provider for report generation.
 
-Returns a Google Gemini LLM instance via langchain-google-genai.
+Returns a NVIDIA NIM LLM instance via langchain-nvidia-ai-endpoints.
 Falls back to stub if the API is unavailable.
 """
 
-from llm1.llm_config import LLM_MODEL_NAME, TEMPERATURE, MAX_TOKENS, GEMINI_API_KEY
+from llm1.llm_config import LLM_MODEL_NAME, TEMPERATURE, MAX_TOKENS, NVIDIA_API_KEY, NVIDIA_BASE_URL
 
 
 class _StubLLM:
-    """Fallback stub LLM for when Gemini API is unavailable."""
-    
+    """Fallback stub LLM for when NVIDIA API is unavailable."""
+
     def invoke(self, prompt: str) -> str:
         return (
             "📊 **Communication Overview**\n"
-            "- Analysis based on stub data (Gemini API not configured)\n\n"
+            "- Analysis based on stub data (NVIDIA API not configured)\n\n"
             "💪 **Confidence & Emotional Tone**\n"
             "- Confidence: Moderate\n\n"
             "🧠 **Personality Insights**\n"
@@ -23,40 +23,41 @@ class _StubLLM:
             "⭐ **Key Strengths**\n"
             "• Structured communication\n\n"
             "🎯 **Improvement Recommendations**\n"
-            "• Configure Gemini API for real AI-powered analysis\n\n"
-            "*Note: Stub response — set GEMINI_API_KEY in .env for real analysis.*"
+            "• Set NVIDIA_API_KEY in backend/.env for real AI-powered analysis\n\n"
+            "*Note: Stub response — NVIDIA_API_KEY not configured.*"
         )
 
 
 def get_llm():
     """
-    Returns a Google Gemini LLM instance for report generation.
-    Falls back to stub if the API key is not configured.
+    Returns a NVIDIA NIM LLM instance (meta/llama-3.1-70b-instruct).
+    Falls back to stub if the API key is not configured or connection fails.
     """
-    if not GEMINI_API_KEY:
-        print("⚠️ GEMINI_API_KEY not set. Using stub LLM for report generation.")
-        print("   Get your free API key at: https://aistudio.google.com/apikey")
+    if not NVIDIA_API_KEY:
+        print("⚠️  NVIDIA_API_KEY not set. Using stub LLM for report generation.")
+        print("   Get your free key at: https://build.nvidia.com/")
         return _StubLLM()
-    
+
     try:
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        
-        llm = ChatGoogleGenerativeAI(
+        from langchain_nvidia_ai_endpoints import ChatNVIDIA
+
+        llm = ChatNVIDIA(
             model=LLM_MODEL_NAME,
-            google_api_key=GEMINI_API_KEY,
+            nvidia_api_key=NVIDIA_API_KEY,
+            base_url=NVIDIA_BASE_URL,
             temperature=TEMPERATURE,
-            max_output_tokens=MAX_TOKENS,
+            max_tokens=MAX_TOKENS,
         )
-        
+
         # Quick test to verify the API key works
-        test_response = llm.invoke("Say 'ok' in one word.")
-        if hasattr(test_response, 'content'):
+        test_response = llm.invoke("Say ok in one word.")
+        if hasattr(test_response, "content"):
             _ = test_response.content
-        
-        print(f"✅ Gemini LLM ({LLM_MODEL_NAME}) ready for report generation")
+
+        print(f"✅ NVIDIA NIM ({LLM_MODEL_NAME}) ready for report generation")
         return llm
-        
+
     except Exception as e:
-        print(f"⚠️ Gemini API not available: {e}")
+        print(f"⚠️  NVIDIA API not available: {e}")
         print("   Using stub LLM for testing...")
         return _StubLLM()
