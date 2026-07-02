@@ -1,17 +1,16 @@
 """LLM wrapper used by agents.
 
-This module provides the LLM instance used by all agents in the pipeline.
-Uses Google Gemini API via langchain-google-genai for cloud-based inference.
+Uses NVIDIA NIM API (meta/llama-3.1-70b-instruct) via langchain-nvidia-ai-endpoints.
 Falls back to a deterministic stub for testing when the API is unavailable.
 """
 import json
 
-from llm1.llm_config import LLM_MODEL_NAME, TEMPERATURE, MAX_TOKENS, GEMINI_API_KEY
+from llm1.llm_config import LLM_MODEL_NAME, TEMPERATURE, MAX_TOKENS, NVIDIA_API_KEY, NVIDIA_BASE_URL
 
 
 class _StubLLM:
-    """Fallback LLM that returns deterministic JSON for testing when Gemini API is unavailable."""
-    
+    """Fallback LLM that returns deterministic JSON for testing when NVIDIA API is unavailable."""
+
     def invoke(self, prompt: str) -> str:
         p = prompt.lower() if prompt else ""
         if "communication analysis ai agent" in p or "senior communication skills analyst" in p:
@@ -25,7 +24,7 @@ class _StubLLM:
                 "communication_gaps": ["Minor filler words"],
                 "improvement_suggestions": ["Reduce filler words", "Add more pauses for emphasis"]
             }
-        elif "confidence & emotion analysis ai agent" in p or "confidence & emotion" in p or "voice confidence analyst" in p:
+        elif "confidence" in p and "emotion" in p:
             resp = {
                 "confidence_score": 78,
                 "confidence_level": "High",
@@ -35,7 +34,7 @@ class _StubLLM:
                 "possible_challenges": ["Slight pitch variation under stress"],
                 "confidence_enhancement_tips": ["Practice deep breathing", "Maintain consistent volume"]
             }
-        elif "personality mapping ai agent" in p or "personality" in p:
+        elif "personality" in p:
             resp = {
                 "personality_type": "Ambivert",
                 "interaction_style": "Balanced",
@@ -45,90 +44,75 @@ class _StubLLM:
                 "growth_opportunities": ["More vocal expressiveness", "Strategic storytelling"],
                 "overall_summary": "A balanced communicator with strong analytical tendencies."
             }
-        elif "communication coach" in p or "personality report" in p:
-            # Final report stub
-            return """
-📊 **Communication Overview**
-- Clarity Score: 85/100 (High)
-- Fluency: High with balanced pacing
-- Vocabulary: Advanced level
-
-💪 **Confidence & Emotional Tone**
-- Confidence Level: High
-- Emotional Tone: Positive
-- Vocal Energy: Moderate
-
-🧠 **Personality Insights**
-- Type: Ambivert communicator
-- Interaction Style: Balanced
-- Professional Presence: Competent
-
-⭐ **Key Strengths**
-• Clear and structured communication
-• Confident delivery with positive tone
-• Professional and balanced approach
-
-🎯 **Improvement Recommendations**
-• Reduce filler words for smoother flow
-• Add strategic pauses for emphasis
-• Experiment with vocal variety for engagement
-
-*Note: This is a stub response — Gemini API key not configured.*
-"""
+        elif "communication coach" in p or "report" in p:
+            return (
+                "📊 **Communication Overview**\n"
+                "- Clarity: High | Fluency: High | Pacing: Balanced\n\n"
+                "💪 **Confidence & Emotional Tone**\n"
+                "- Confidence: High | Emotional Tone: Positive\n\n"
+                "🧠 **Personality Insights**\n"
+                "- Type: Ambivert | Presence: Competent\n\n"
+                "⭐ **Key Strengths**\n"
+                "• Clear structured communication\n"
+                "• Confident, positive delivery\n\n"
+                "🎯 **Improvement Recommendations**\n"
+                "• Configure NVIDIA_API_KEY in .env for real AI-powered analysis\n\n"
+                "*Note: Stub response — set NVIDIA_API_KEY in .env for full analysis.*"
+            )
         else:
-            resp = {"message": "stub response", "note": "Gemini API not configured — using fallback"}
+            resp = {"message": "stub response", "note": "NVIDIA API not configured — using fallback"}
         return json.dumps(resp)
 
 
-class _LazyGeminiLLM:
-    """Lazy-loading wrapper that tries Google Gemini API first, falls back to stub."""
-    
+class _LazyNvidiaLLM:
+    """Lazy-loading wrapper that uses NVIDIA NIM API, falls back to stub."""
+
     def __init__(self):
         self._llm = None
         self._initialized = False
-    
+
     def _get_llm(self):
         if not self._initialized:
             self._initialized = True
-            
-            if not GEMINI_API_KEY:
-                print("⚠️ GEMINI_API_KEY not set. Using stub LLM.")
-                print("   Get your free API key at: https://aistudio.google.com/apikey")
+
+            if not NVIDIA_API_KEY:
+                print("⚠️  NVIDIA_API_KEY not set. Using stub LLM.")
+                print("   Get your free key at: https://build.nvidia.com/")
                 print("   Then set it in backend/.env file")
                 self._llm = _StubLLM()
                 return self._llm
-            
+
             try:
-                from langchain_google_genai import ChatGoogleGenerativeAI
-                
-                self._llm = ChatGoogleGenerativeAI(
+                from langchain_nvidia_ai_endpoints import ChatNVIDIA
+
+                self._llm = ChatNVIDIA(
                     model=LLM_MODEL_NAME,
-                    google_api_key=GEMINI_API_KEY,
+                    nvidia_api_key=NVIDIA_API_KEY,
+                    base_url=NVIDIA_BASE_URL,
                     temperature=TEMPERATURE,
-                    max_output_tokens=MAX_TOKENS,
+                    max_tokens=MAX_TOKENS,
                 )
-                
+
                 # Test connection
-                test_response = self._llm.invoke("Say 'ok' in one word.")
-                # ChatGoogleGenerativeAI returns AIMessage, extract text
-                if hasattr(test_response, 'content'):
+                test_response = self._llm.invoke("Say ok in one word.")
+                if hasattr(test_response, "content"):
                     _ = test_response.content
-                print(f"✅ Google Gemini ({LLM_MODEL_NAME}) connected successfully")
-                
+                print(f"✅ NVIDIA NIM ({LLM_MODEL_NAME}) connected successfully")
+
             except Exception as e:
-                print(f"⚠️ Gemini API not available ({e}), using stub LLM")
+                print(f"⚠️  NVIDIA API not available ({e}), using stub LLM")
                 self._llm = _StubLLM()
-        
+
         return self._llm
-    
+
     def invoke(self, prompt: str) -> str:
         llm = self._get_llm()
         response = llm.invoke(prompt)
-        # ChatGoogleGenerativeAI returns AIMessage object; extract text content
-        if hasattr(response, 'content'):
+        # ChatNVIDIA returns AIMessage — extract text content
+        if hasattr(response, "content"):
             return response.content
         return str(response)
 
 
 # Export lazy-loading LLM instance
-llm = _LazyGeminiLLM()
+llm = _LazyNvidiaLLM()
