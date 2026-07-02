@@ -3,7 +3,7 @@
 FastAPI application for Speech Personality Analysis.
 
 Provides REST endpoints for audio analysis using the
-multi-agent AI pipeline with Google Gemini.
+multi-agent AI pipeline with NVIDIA NIM (meta/llama-3.1-70b-instruct).
 """
 
 import os
@@ -40,12 +40,12 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 @app.get("/health")
 async def health_check():
     """Health check endpoint for deployment readiness."""
-    gemini_configured = bool(os.getenv("GEMINI_API_KEY"))
+    nvidia_configured = bool(os.getenv("NVIDIA_API_KEY"))
     return {
         "status": "healthy",
-        "llm_provider": "google-gemini",
-        "gemini_configured": gemini_configured,
-        "model": os.getenv("GEMINI_MODEL_NAME", "gemini-2.0-flash"),
+        "llm_provider": "nvidia-nim",
+        "nvidia_configured": nvidia_configured,
+        "model": os.getenv("NVIDIA_MODEL_NAME", "meta/llama-3.1-70b-instruct"),
     }
 
 

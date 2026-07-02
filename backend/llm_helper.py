@@ -1,7 +1,8 @@
 """Helper to load the project's LLM implementation.
 
 Loads the LLM instance from `llm/local_llm.py` which provides
-a Google Gemini-backed LLM with automatic fallback to a stub.
+a NVIDIA NIM-backed LLM (meta/llama-3.1-70b-instruct) with
+automatic fallback to a stub for testing.
 
 If the standard import fails (e.g., because a package named `llm`
 shadows the local folder), it loads the file directly.
@@ -24,11 +25,9 @@ def _load_local_llm_from_file():
 
 
 try:
-    # Prefer the package import if it works and contains `local_llm` module
     llm_mod = importlib.import_module("llm.local_llm")
     llm = getattr(llm_mod, "llm")
 except Exception:
-    # Fallback to loading the local file directly
     llm = _load_local_llm_from_file()
 
 
