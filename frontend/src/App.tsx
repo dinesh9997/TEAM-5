@@ -51,7 +51,11 @@ function App() {
       setRecording(true);
       setDuration(0);
 
-      durationIntervalRef.current = setInterval(() => {
+      // Clear any previous interval to prevent double-counting
+      if (durationIntervalRef.current) {
+        clearInterval(durationIntervalRef.current);
+      }
+      durationIntervalRef.current = window.setInterval(() => {
         setDuration(prev => prev + 1);
       }, 1000);
     } catch (err) {

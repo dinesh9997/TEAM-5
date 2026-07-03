@@ -9,7 +9,7 @@ def transcribe_audio(audio_file):
         compute_type="int8"
     )
 
-    print("🎧 Transcribing...")
+    print("[INFO] Transcribing audio...")
     segments, info = model.transcribe(audio_file, language="en")
 
     full_text = ""

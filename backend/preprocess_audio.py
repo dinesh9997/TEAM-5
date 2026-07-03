@@ -1,12 +1,13 @@
 import librosa
 import soundfile as sf
+from utils.audio_loader import load_audio
 
 INPUT_AUDIO = "raw_audio.wav"
 OUTPUT_AUDIO = "clean_audio.wav"
 
 def preprocess_audio(input_path, output_path):
-    # Load audio
-    y, sr = librosa.load(input_path, sr=16000, mono=True)
+    # Load audio using PyAV to handle WebM/various formats
+    y, sr = load_audio(input_path, target_sr=16000)
 
     # Normalize volume
     y = librosa.util.normalize(y)

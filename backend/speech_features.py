@@ -1,6 +1,7 @@
 import librosa
 import opensmile
 import torch
+from utils.audio_loader import load_audio
 
 # ---------------------------
 # LOAD MODELS ONCE
@@ -32,10 +33,18 @@ vad_model, vad_utils = torch.hub.load(
 
 def compute_pause_ratio(audio_path, sampling_rate=16000):
     """
-    Computes pause ratio using Silero VAD
-    pause_ratio = non-speech duration / total duration
+    Computes pause ratio using Silero VAD.
+    pause_ratio = non-speech duration / total duration.
+    Uses PyAV-based load_audio instead of Silero's read_audio to avoid
+    torchcodec/FFmpeg dependency issues on Windows.
     """
-    wav = read_audio(audio_path, sampling_rate=sampling_rate)
+    # Load audio as numpy array, then convert to torch tensor for Silero VAD
+    y, sr = load_audio(audio_path, target_sr=sampling_rate)
+    wav = torch.from_numpy(y).float()
+
+    # Silero VAD expects values in [-1, 1] range
+    if wav.abs().max() > 1.0:
+        wav = wav / wav.abs().max()
 
     speech_timestamps = get_speech_timestamps(
         wav, vad_model, sampling_rate=sampling_rate
@@ -56,12 +65,13 @@ def compute_pause_ratio(audio_path, sampling_rate=16000):
     return round(pause_ratio, 2), round(pause_time, 2)
 
 
+
 # ---------------------------
 # MAIN FUNCTION
 # ---------------------------
 def analyze_speech(audio_file, word_segments):
-    # Load audio
-    y, sr = librosa.load(audio_file, sr=16000)
+    # Load audio using PyAV to handle WebM/various container formats
+    y, sr = load_audio(audio_file, target_sr=16000)
     duration_sec = librosa.get_duration(y=y, sr=sr)
 
     # -----------------------

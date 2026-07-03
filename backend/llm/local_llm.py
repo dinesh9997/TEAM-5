@@ -76,7 +76,7 @@ class _LazyNvidiaLLM:
             self._initialized = True
 
             if not NVIDIA_API_KEY:
-                print("⚠️  NVIDIA_API_KEY not set. Using stub LLM.")
+                print("[WARNING] NVIDIA_API_KEY not set. Using stub LLM.")
                 print("   Get your free key at: https://build.nvidia.com/")
                 print("   Then set it in backend/.env file")
                 self._llm = _StubLLM()
@@ -97,10 +97,10 @@ class _LazyNvidiaLLM:
                 test_response = self._llm.invoke("Say ok in one word.")
                 if hasattr(test_response, "content"):
                     _ = test_response.content
-                print(f"✅ NVIDIA NIM ({LLM_MODEL_NAME}) connected successfully")
+                print(f"[OK] NVIDIA NIM ({LLM_MODEL_NAME}) connected successfully")
 
             except Exception as e:
-                print(f"⚠️  NVIDIA API not available ({e}), using stub LLM")
+                print(f"[WARNING] NVIDIA API not available ({e}), using stub LLM")
                 self._llm = _StubLLM()
 
         return self._llm
