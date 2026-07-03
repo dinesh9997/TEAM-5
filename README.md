@@ -5,7 +5,7 @@
 [![React](https://img.shields.io/badge/React-19.2+-61DAFB.svg)](https://reactjs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-An advanced AI-powered speech analysis system that provides real-time personality insights and communication feedback using Google Gemini API, RAG, and multi-agent AI architecture.
+An advanced AI-powered speech analysis system that provides real-time personality insights and communication feedback using NVIDIA NIM API, RAG, and multi-agent AI architecture.
 
 ## 📋 Table of Contents
 
@@ -27,7 +27,7 @@ An advanced AI-powered speech analysis system that provides real-time personalit
 
 ## 🌟 Overview
 
-TEAM-5 is a comprehensive speech analysis pipeline that combines state-of-the-art speech processing, natural language understanding, and multi-agent AI systems to provide detailed personality insights and communication analysis. The system uses Google Gemini API and Retrieval-Augmented Generation (RAG) to deliver personalized, actionable feedback.
+TEAM-5 is a comprehensive speech analysis pipeline that combines state-of-the-art speech processing, natural language understanding, and multi-agent AI systems to provide detailed personality insights and communication analysis. The system uses NVIDIA NIM API (meta/llama-3.1-70b-instruct) and Retrieval-Augmented Generation (RAG) to deliver personalized, actionable feedback.
 
 ### Key Capabilities
 
@@ -90,9 +90,9 @@ TEAM-5 is a comprehensive speech analysis pipeline that combines state-of-the-ar
                          │
                          ▼
               ┌────────────────────┐
-              │   Google Gemini    │
+              │    NVIDIA NIM      │
               │   Cloud LLM API   │
-              │ (gemini-2.0-flash) │
+              │(llama-3.1-70b)    │
               └────────────────────┘
 ```
 
@@ -138,9 +138,9 @@ python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-# Configure Gemini API key (free at https://aistudio.google.com/apikey)
+# Configure NVIDIA NIM API key (get at https://build.nvidia.com/)
 cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY
+# Edit .env and add your NVIDIA_API_KEY
 
 # Start backend API
 uvicorn api:app --reload --port 8000
@@ -191,14 +191,14 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. Configure Google Gemini API (Required for LLM)
+### 3. Configure NVIDIA NIM API (Required for LLM)
 
-The project uses Google Gemini API for AI inference. The free tier is generous and requires no credit card.
+The project uses NVIDIA NIM API (meta/llama-3.1-70b-instruct) for AI inference.
 
 **Get Your API Key:**
-1. Visit [Google AI Studio](https://aistudio.google.com/apikey)
-2. Sign in with your Google account
-3. Click "Create API Key"
+1. Visit [NVIDIA Build](https://build.nvidia.com/)
+2. Sign in with your NVIDIA account
+3. Generate an API Key
 4. Copy the generated key
 
 **Configure the API Key:**
@@ -207,14 +207,10 @@ cd backend
 cp .env.example .env
 ```
 
-Edit `backend/.env` and replace `your_gemini_api_key_here` with your actual key:
+Edit `backend/.env` and set your NVIDIA API key:
 ```
-GEMINI_API_KEY=your_actual_api_key_here
+NVIDIA_API_KEY=your_actual_api_key_here
 ```
-
-**Verify Configuration:**
-```bash
-python -c "from llm1.llm_config import GEMINI_API_KEY; print('✅ Key configured' if GEMINI_API_KEY else '❌ Key not set')"
 
 ### 4. Frontend Setup (Optional)
 
@@ -339,6 +335,7 @@ TEAM-5/
 │   │
 │   ├── utils/                   # Utilities
 │   │   ├── parser.py
+│   │   ├── audio_loader.py
 │   │   └── feature_scoring.py
 │   │
 │   ├── speech_to_text.py        # Whisper transcription
@@ -399,10 +396,10 @@ When the backend is running, visit:
 
 Configured via environment variables in `backend/.env`:
 ```bash
-GEMINI_API_KEY=your_key_here           # Required
-GEMINI_MODEL_NAME=gemini-2.0-flash     # Model to use
-LLM_TEMPERATURE=0.3                     # Creativity (0.0-1.0)
-LLM_MAX_TOKENS=1024                     # Max response length
+NVIDIA_API_KEY=your_key_here                      # Required
+NVIDIA_MODEL_NAME=meta/llama-3.1-70b-instruct     # Model to use
+LLM_TEMPERATURE=0.3                                # Creativity (0.0-1.0)
+LLM_MAX_TOKENS=1024                                # Max response length
 ```
 
 ### RAG Configuration (`backend/rag/config.py`)
@@ -488,22 +485,22 @@ python main.py
 
 ## 🔧 Troubleshooting
 
-### Gemini API Issues
+### NVIDIA NIM API Issues
 
-**Error:** `GEMINI_API_KEY not set`
+**Error:** `NVIDIA_API_KEY not set`
 
 **Solution:**
-1. Get a free API key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+1. Get your API key at [build.nvidia.com](https://build.nvidia.com/)
 2. Copy `.env.example` to `.env`: `cp .env.example .env`
 3. Add your API key to `backend/.env`
 4. Restart the backend server
 
-**Error:** `Gemini API not available`
+**Error:** `NVIDIA API not available`
 
 **Solution:**
 1. Check your API key is valid
 2. Verify internet connection
-3. Check Google AI Studio for API status
+3. Check NVIDIA Build platform for API status
 
 ### Import Errors
 
@@ -558,7 +555,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **Faster-Whisper**: OpenAI Whisper implementation
-- **Google Gemini**: Cloud LLM API
+- **NVIDIA NIM**: Cloud LLM API
 - **LangChain**: LLM application framework
 - **ChromaDB**: Vector database for AI
 - **FastAPI**: Modern Python web framework
@@ -572,13 +569,13 @@ For issues and questions:
 
 ## 🗺️ Roadmap
 
-- [x] Support for cloud LLM providers (Google Gemini)
+- [x] Support for cloud LLM providers (NVIDIA NIM)
 - [ ] Multi-language support
 - [ ] Real-time streaming analysis
 - [ ] Advanced visualization dashboards
 - [ ] Mobile app
 - [ ] Docker containerization
-- [x] Cloud deployment ready (Gemini API)
+- [x] Cloud deployment ready (NVIDIA NIM API)
 
 ---
 
