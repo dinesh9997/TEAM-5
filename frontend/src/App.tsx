@@ -38,7 +38,19 @@ function App() {
     try {
       setError(null);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
+      // Pick the best supported MIME type for cross-browser compatibility
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")
+        ? "audio/ogg;codecs=opus"
+        : "";
+
+      const mediaRecorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
 
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
@@ -77,8 +89,12 @@ function App() {
     recorder.stream.getTracks().forEach(track => track.stop());
 
     recorder.onstop = async () => {
-      const audioBlob = new Blob(chunksRef.current, { type: "audio/wav" });
-      const file = new File([audioBlob], "recording.wav", { type: "audio/wav" });
+      // Use the actual MIME type from the recorder so the backend
+      // knows which container format to decode (WebM, OGG, etc.)
+      const mimeType = recorder.mimeType || "audio/webm";
+      const ext = mimeType.includes("ogg") ? "ogg" : "webm";
+      const audioBlob = new Blob(chunksRef.current, { type: mimeType });
+      const file = new File([audioBlob], `recording.${ext}`, { type: mimeType });
 
       setLoading(true);
       setRecording(false);
@@ -87,8 +103,11 @@ function App() {
         const analysisResult = await analyzeAudio(file);
         setResult(analysisResult);
         setError(null);
-      } catch (err) {
-        setError("Analysis failed. Please try again.");
+      } catch (err: unknown) {
+        // Surface the actual error message returned by the backend
+        let message = "Analysis failed. Please try again.";
+        if (err instanceof Error) message = err.message;
+        setError(message);
         console.error("Analysis error:", err);
       } finally {
         setLoading(false);

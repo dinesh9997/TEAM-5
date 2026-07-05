@@ -8,7 +8,15 @@ export async function analyzeAudio(file: File) {
   });
 
   if (!res.ok) {
-    throw new Error("Analysis failed");
+    // Try to extract the detailed error message returned by FastAPI
+    try {
+      const errorBody = await res.json();
+      const detail = errorBody?.detail ?? `Server error ${res.status}`;
+      throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+    } catch (jsonErr) {
+      // If the body isn't valid JSON, fall back to status text
+      throw new Error(`Analysis failed (HTTP ${res.status}: ${res.statusText})`);
+    }
   }
   return res.json();
 }
